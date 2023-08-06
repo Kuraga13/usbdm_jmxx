@@ -1,0 +1,8 @@
+
+[package]
+name = "example_usbdm_jmxx"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+usbdm_jmxx.workspace = true
