@@ -13,10 +13,6 @@ packed_struct = "0.10.0"
 rusb = "0.9.2"
 
 
-[dependencies.rusb] 
-git = "https://github.com/a1ien/rusb"
-rev = "2cf0949" #latest commit as of 24.04.2023 v0.9.2
-
 [workspace]
 members = [
     "example"
