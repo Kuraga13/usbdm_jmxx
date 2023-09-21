@@ -41,6 +41,7 @@ pub const OCR_ISC_SINGLE_STEP : u8 = 0x05;
 pub const OCR_ISC_6           : u8 = 0x06;
 pub const OCR_ISC_7           : u8 = 0x07;
 
+
 //Aliases for Cached routines
 const JTAG_SUB_EXECUTE    : u8 = JTAG_SUBA;       // execute a series of target instructions (firmware implemented)
 const JTAG_SUB_MEM_READ   : u8 = JTAG_SUBB;       // read a block from target memory
@@ -197,15 +198,15 @@ pub const EONCE_REGISTER_DETAILS: [EonceRegisterDetails; DSC_ONCE_REGISTER_COUNT
 //
 pub fn get_register_size(reg: DscRegisters) -> Result<u8, BdmError> {
    
-    if ((reg as u8 >= DSC_FIRST_CORE_REGISTER) && (reg as u8 <= DSC_LAST_CORE_REGISTER)) {
+    if (reg as u8 >= DSC_FIRST_CORE_REGISTER) && (reg as u8 <= DSC_LAST_CORE_REGISTER) {
         let reg_index: u8 = reg as u8 - DSC_FIRST_CORE_REGISTER;
         return Ok(TARGET_REGISTER_DETAILS[reg_index as usize].width)
     } 
-    else if ((reg as u8 >= DSC_FIRST_ONCE_REGISTER) && (reg as u8 <= DSC_LAST_ONCE_REGISTER)) {
+    else if (reg as u8 >= DSC_FIRST_ONCE_REGISTER) && (reg as u8 <= DSC_LAST_ONCE_REGISTER) {
         let reg_index: u8 = reg as u8 - DSC_FIRST_ONCE_REGISTER;
         return Ok(EONCE_REGISTER_DETAILS[reg_index as usize].length)
     }
-    else if (reg as u8 == DscRegisters::DscRegIdcode as u8) {
+    else if reg as u8 == DscRegisters::DscRegIdcode as u8 {
         return Ok(32);
     }
     Err(BdmError::InternalError("Unexpected BdmError in get_register_size".to_string()))

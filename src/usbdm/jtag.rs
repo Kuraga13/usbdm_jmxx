@@ -180,7 +180,7 @@ pub const JTAG_SHIFT_IN_DP          : u8 = 61;                        // #8=N   
 pub const JTAG_SHIFT_IN_OUT_DP      : u8 = 62;                        // #8=N    Shift out & in N bits, data taken from dataPtr
 
 //============================================================================================
-pub const JTAG_RESERVED_2           : u8 = (2<<5);
+pub const JTAG_RESERVED_2           : u8 = 2<<5;
 
 //============================================================================================
 // The following quick commands take a fixed operand (N=1-31,0=>32) as part of the opcode
@@ -290,7 +290,7 @@ impl From <u8>  for OnceStatus  {
     // @note - resetTAP=true will enable the Master TAP & disable the Code TAP
     // @note - Leaves Core TAP in RUN-TEST/IDLE
     //
-    pub fn read_id_code(commandRegLength :u8, resetTAP: bool, prg:  &Programmer) -> Result<(Vec<u8>), BdmError> {
+    pub fn read_id_code(commandRegLength :u8, resetTAP: bool, prg:  &Programmer) -> Result<Vec<u8>, BdmError> {
         let mut sequence: Vec<u8> = Vec::new();
         if resetTAP {
             sequence.push(JTAG_TEST_LOGIC_RESET);
@@ -308,11 +308,11 @@ impl From <u8>  for OnceStatus  {
         prg.exec_jtag_seq(sequence, 4)
     }
 
-    pub fn read_master_id_code_DSC_JTAG_ID(resetTAP: bool, prg:  &Programmer) -> Result<(Vec<u8>), BdmError> {
+    pub fn read_master_id_code_DSC_JTAG_ID(resetTAP: bool, prg:  &Programmer) -> Result<Vec<u8>, BdmError> {
         read_id_code(JTAG_MASTER_COMMAND_LENGTH, resetTAP, prg)
     }
 
-    pub fn read_core_id_code(resetTAP: bool, prg:  &Programmer) -> Result<(Vec<u8>), BdmError> {
+    pub fn read_core_id_code(resetTAP: bool, prg:  &Programmer) -> Result<Vec<u8>, BdmError> {
         read_id_code(JTAG_CORE_COMMAND_LENGTH, resetTAP, prg)
     }
 
@@ -353,7 +353,7 @@ impl From <u8>  for OnceStatus  {
      /// 
      /// ```
      /// `EOnCE` = `Enhanced On-chip emulation (unit)`
-     pub fn enableONCE(prg:  &Programmer) -> Result<(OnceStatus), BdmError> {
+     pub fn enableONCE(prg:  &Programmer) -> Result<OnceStatus, BdmError> {
         let mut sequence: Vec<u8> = Vec::new();
         sequence.push(JTAG_MOVE_IR_SCAN);                // Write enable EONCE command to IR
         sequence.push(JTAG_SET_EXIT_IDLE); 
@@ -362,7 +362,7 @@ impl From <u8>  for OnceStatus  {
         sequence.push(JTAG_END);
         let answer = prg.exec_jtag_seq(sequence, JTAG_CORE_COMMAND_LENGTH)?;
         let once_byte = answer[0];
-        Ok((OnceStatus::from(once_byte)))
+        Ok(OnceStatus::from(once_byte))
     }
 
 impl Programmer
@@ -393,23 +393,23 @@ impl Programmer
     /// `note` Leaves Core TAP in RUN-TEST/IDLE
     pub fn dsc_target_halt(&self) -> Result<OnceStatus, BdmError> {
         let mut once_status: OnceStatus = OnceStatus::UnknownMode;
-        for retry in 0..10 
+        for _retry in 0..10 
         {
             self.targetDebugRequest()?;
             once_status = enableONCE(&self)?;
-            if(once_status == OnceStatus::DebugMode)
+            if once_status == OnceStatus::DebugMode
                 { 
                     break; 
                 }
-            if(once_status == OnceStatus::UnknownMode) 
+            if once_status == OnceStatus::UnknownMode
                 {   
                     self.dsc_target_go()?;
                     let force_once_status = enableONCE(&self)?;
                     dbg!("Force DSC executive! Once status after is: ", force_once_status);
                 }
         }
-        if (once_status != OnceStatus::DebugMode) {
-            return Err((BdmError::HaltFailed("DSC enter debug mode failed!".to_string())))
+        if once_status != OnceStatus::DebugMode {
+            return Err(BdmError::HaltFailed("DSC enter debug mode failed!".to_string()))
         }
         Ok(once_status)
     }
@@ -448,23 +448,23 @@ impl Programmer
     // @note Size is limited to dscInfo.maxMemoryReadSize
     //
     /// Private helper function use `dsc_read_memory` instead
-    fn read_memory_block(&self, mut memory_space: u8, num_bytes: u8, address: u32) -> Result<(Vec<u8>), BdmError> {
-        if (memory_space == memory_space_t::MS_PLONG) {
+    fn read_memory_block(&self, mut memory_space: u8, num_bytes: u8, address: u32) -> Result<Vec<u8>, BdmError> {
+        if memory_space == memory_space_t::MS_PLONG {
             // Treat as word access
             memory_space = memory_space_t::MS_PWORD;
         };
 
         let mut num_bytes_adjusted = num_bytes;
-        match (memory_space & memory_space_t::MS_SIZE) {
+        match memory_space & memory_space_t::MS_SIZE {
             memory_space_t::MS_LONG => {
-                if ((address & 0x01) == 0) {
+                if (address & 0x01) == 0 {
                     num_bytes_adjusted /= 4;
                 } else {
                     return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS))
                 };},
             memory_space_t::MS_WORD => { num_bytes_adjusted /= 2; },
             memory_space_t::MS_BYTE => { num_bytes_adjusted /= 1; },
-            other => return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS)),
+            _other => return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS)),
         };
 
         /*
@@ -514,7 +514,7 @@ impl Programmer
     // @note If memory space size is word or long size then address is DSC word address
     // @note If memory space size is byte size then address is DSC byte pointer address
     //
-    pub fn dsc_read_memory (&self, memory_space: u8, num_bytes: u32, address: u32) -> Result<(Vec<u8>), BdmError> {
+    pub fn dsc_read_memory (&self, memory_space: u8, num_bytes: u32, address: u32) -> Result<Vec<u8>, BdmError> {
         let element_size: u8 = memory_space & memory_space_t::MS_SIZE;
         let mut bytes_done: u32 = 0;
         let mut current_address: u32 = address;
@@ -522,10 +522,10 @@ impl Programmer
 
         let max_read_size: u32 = 0x20;
 
-        while (bytes_done < num_bytes) {
+        while bytes_done < num_bytes {
             let mut block_size: u32 = num_bytes - bytes_done;
             
-            if (block_size > max_read_size) {
+            if block_size > max_read_size {
                 block_size = max_read_size; }
             
             let mut data = self.read_memory_block(memory_space, block_size as u8, current_address)?;
@@ -554,7 +554,7 @@ impl Programmer
     //
     /// Private helper function use `dsc_write_memory` instead
     fn write_memory_block(&self, mut memory_space: u8, mut data: Vec<u8>, address: u32) -> Result<(), BdmError> {
-        if (memory_space == memory_space_t::MS_PLONG) {
+        if memory_space == memory_space_t::MS_PLONG {
             // Treat as word access
             memory_space = memory_space_t::MS_PWORD;
         };
@@ -562,16 +562,16 @@ impl Programmer
         if data.len() > u8::MAX.into() {return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS))}; 
         let num_bytes:u8 = data.len() as u8;
         let mut num_bytes_adjusted = num_bytes;
-        match (memory_space & memory_space_t::MS_SIZE) {
+        match memory_space & memory_space_t::MS_SIZE {
             memory_space_t::MS_LONG => {
-                if ((address & 0x01) == 0) {
+                if (address & 0x01) == 0 {
                     num_bytes_adjusted /= 4;
                 } else {
                     return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS))
                 };},
             memory_space_t::MS_WORD => { num_bytes_adjusted /= 2; },
             memory_space_t::MS_BYTE => { num_bytes_adjusted /= 1; },
-            other => return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS)),
+            _other => return Err(BdmError::USBDM_Errors(USBDM_ErrorCode::BDM_RC_ILLEGAL_PARAMS)),
         };
 
         /*
@@ -624,16 +624,16 @@ impl Programmer
     // @note If memory space size is word or long size then address is DSC word address
     // @note If memory space size is byte size then address is DSC byte pointer address
     //
-    pub fn dsc_write_memory(&self, mut memory_space: u8, mut data: Vec<u8>, address: u32) -> Result<(), BdmError> {
+    pub fn dsc_write_memory(&self, memory_space: u8, mut data: Vec<u8>, address: u32) -> Result<(), BdmError> {
         let mut current_address: u32 = address;
         let element_size: u8 = memory_space & memory_space_t::MS_SIZE;
 
         let max_write_size: usize = 0x20;
 
-        while (data.len() > 0) {
+        while data.len() > 0 {
             let mut block_size = data.len();
             
-            if (block_size > max_write_size) {
+            if block_size > max_write_size {
                 block_size = max_write_size; };
 
             self.write_memory_block(memory_space, data.drain(..block_size).collect(), current_address)?;

@@ -26,7 +26,7 @@ impl Drop for Programmer{
 
     fn drop(&mut self) {
         let _ = self.set_vdd(TargetVddSelect::VddOff);
-        drop(&mut self.usb_device);
+       // drop(&mut self.usb_device);
         println!("Programmer dropped");
     }
 }

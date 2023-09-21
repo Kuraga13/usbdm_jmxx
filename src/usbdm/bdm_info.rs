@@ -1,4 +1,3 @@
-use super::*;
 use crate::errors::{BdmError, USBDM_ErrorCode};
 use std::fmt;
 
@@ -175,7 +174,7 @@ impl Capabilities {
 
     pub fn check_dsc_supported(&self) -> Result<(), BdmError> {
 
-        if(self.dsc == true)
+        if self.dsc == true
         {
             Ok(())
         }

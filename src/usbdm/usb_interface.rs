@@ -137,8 +137,7 @@ impl  UsbInterface
 impl Drop for UsbInterface
 {
     fn drop(&mut self) {
-        self.handle.release_interface(self.interface_n);
-        println!("UsbInterface dropped");
+        println!("USBDM UsbInterface dropped");
     }
 }
 

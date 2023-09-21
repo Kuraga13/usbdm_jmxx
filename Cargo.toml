@@ -8,9 +8,9 @@ description = "Base API for Usbdm JMxx Programmer"
 
 
 [dependencies]
-byteorder = {version = "1", features = ["i128"]}
-packed_struct = "0.10.0"
-rusb = "0.9.2"
+byteorder = {version = "1.4.3", features = ["i128"]}
+packed_struct = "0.10.1"
+rusb = "0.9.3"
 
 
 [workspace]

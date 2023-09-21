@@ -128,7 +128,7 @@ impl Programmer
       let mut usb_buf = [0; 2];
       usb_buf[0] = 2;  // lenght
       usb_buf[1] = bdm_commands::CMD_USBDM_GET_BDM_STATUS;
-      let command = "CMD_USBDM_GET_BDM_STATUS".to_string();
+      //let command = "CMD_USBDM_GET_BDM_STATUS".to_string();
 
       let bit = 0x80;
       let bitter = usb_buf[1] | bit;
